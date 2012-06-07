@@ -10,7 +10,7 @@ class remoteStorage:
 		self.storage_info = WebFinger(user_address).finger()
 		return self.storage_info
 
-	def createOAuthAddress(self, scopes, redirect_uri):
+	def create_oauth_address(self, scopes, redirect_uri):
 		if self.storage_info.type == 'https://www.w3.org/community/rww/wiki/read-write-web-00#simple':
 			scopes_str = ' '.join(scopes)
 		else:
@@ -29,7 +29,7 @@ class remoteStorage:
 
 		return authHref+("?" if authHref.find('?') == -1 else "&")+'&'.join(attrs)
 
-	def createClient(self, category, token=None):
+	def create_client(self, category, token=None):
 		return remoteStorageClient(self.storage_info, category, token)
 
 class remoteStorageClient:
@@ -58,7 +58,22 @@ class remoteStorageClient:
 		return self.driver.delete(self.resolve_key(key), self.token)
 
 if __name__ == "__main__":
+	# Example usage
+
+	# Create an instance of remoteStorage
 	rs = remoteStorage()
+	# Get the storage info
 	rs.get_storage_info('lukashed@owncube.com')
-	cl = rs.createClient('public')
-	print cl.get('remoteStorageTest')
+
+	# Gets you an oauth address like https://owncube.com/apps/remoteStorage/auth.php/lukashed?redirect_uri=http%3A%2F%2Flukasklein.com%2F&scope=remoteStorage.py&response_type=token&client_id=lukasklein.com
+	# The scope specifies the categories that you want to access, the redirect uri can basically be any URL, that's the bad part about
+	# remoteStorage.py. You have to manually copy that address to your browser and then copy the generated bearer token from the redirect
+	# URI. Do you have any suggestions on how to make this better?
+	print rs.create_oauth_address(['remoteStorage.py'], 'http://lukasklein.com/')
+
+	# Creates a client instance for the given category. Token is optional, but if you need write access it's obviously compulsory.
+	cl = rs.create_client('remoteStorage.py', 'thebearertoken')
+	# Puts some data
+	cl.put('test', 'This is just a Test.')
+	# And gets it again
+	print cl.get('test')
