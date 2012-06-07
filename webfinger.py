@@ -21,6 +21,15 @@ class WebFingerResult:
 			'http://oauth.net/core/1.0/endpoint/request': self.auth
 		}
 
+		template_parts = self.template.split('{category}')
+		if template_parts[0][-1:] == '/':
+			self.href = template_parts[0][:-1]
+		else:
+			self.href = template_parts[0]
+
+		if len(template_parts) == 2 and template_parts[1] != '/':
+			self.properties['legacy_suffix'] = template_parts[1]
+
 class WebFingerException(Exception):
 	pass
 

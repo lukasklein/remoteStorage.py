@@ -1,4 +1,5 @@
 from webfinger import WebFinger
+from webdav import WebDAV
 import urllib
 
 class remoteStorage:
@@ -28,7 +29,36 @@ class remoteStorage:
 
 		return authHref+("?" if authHref.find('?') == -1 else "&")+'&'.join(attrs)
 
+	def createClient(self, category, token=None):
+		return remoteStorageClient(self.storage_info, category, token)
+
+class remoteStorageClient:
+	def __init__(self, storage_info, path, token=None):
+		self.storage_info = storage_info
+		self.path = path
+		self.token = token
+		self.driver = self.get_driver()
+
+	def resolve_key(self, rel_path):
+		item_path_parts = ((self.path+'/' if self.path else '')+rel_path).split('/')
+		item = '_'.join(item_path_parts[1:])
+		return self.storage_info.href + '/' + item_path_parts[0] + self.storage_info.properties.get('legacy_suffix', '') + '/' + ('u' if item[0] == '_' else '') + item
+
+	def get_driver(self):
+		if self.storage_info.type == 'https://www.w3.org/community/unhosted/wiki/remotestorage-2011.10#webdav':
+			return WebDAV()
+
+	def get(self, key):
+		return self.driver.get(self.resolve_key(key), self.token)
+
+	def put(self, key, value):
+		return self.driver.put(self.resolve_key(key), value, self.token)
+
+	def delete(self, key):
+		return self.driver.delete(self.resolve_key(key), self.token)
+
 if __name__ == "__main__":
 	rs = remoteStorage()
 	rs.get_storage_info('lukashed@owncube.com')
-	print rs.createOAuthAddress('', 'http://lukasklein.com')
+	cl = rs.createClient('public')
+	print cl.get('remoteStorageTest')
